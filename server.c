@@ -14,6 +14,10 @@ int main(int argc, char *argv[]){
     
     struct socket s = init_socket(port);
 
+    while(1) {
+        //TODO: need to deal with multiple clients, acknowledgements, timeouts, etc.
+        struct packet_info packet = receive_packet(s);
+    }
 
 
 }

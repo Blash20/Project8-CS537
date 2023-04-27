@@ -2,7 +2,8 @@
 RCP does not define the format of messages. For this reason, we define a message struct here.
 */
 
-struct message{
+
+struct request_message{
     int seq_number;
     int client_id;
 
