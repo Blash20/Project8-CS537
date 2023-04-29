@@ -154,7 +154,12 @@ int main(int argc, char *argv[]){
     }
     
     int port = atoi(argv[1]);
-    
+
+    if(port < 2049 || port > 65536){
+        printf("port must be between 2049 and 65536 inclusive\n");
+        exit(1);
+    }
+
     s = init_socket(port);
 
     call_table = (struct call_table_entry*)calloc(100, sizeof(struct call_table_entry));
@@ -224,7 +229,6 @@ int main(int argc, char *argv[]){
                 printf("sent last result to client %d with seq number %d\n", m.client_id, m.seq_number);
             }
         
-
         } else{
             call_table[call_table_index].seq_number = m.seq_number;
             call_table[call_table_index].in_progress = 1;
