@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
-#include <client.h>
+#include "client.h"
 #include <sys/time.h>
 #include "server_functions.h"
 
@@ -64,8 +64,8 @@ void RPC_idle(struct rpc_connection *rpc, int time) {
     int valid = -1;
     
     for (int i = 0; i < RETRY_COUNT; i++) {
-        send_packet(rpc->recv_socket, rpc->dst_addr, rpc->dst_len, (int*)message.buff, sizeof(message.buff));
-        struct packet_info result;
+        send_packet(rpc->recv_socket, rpc->dst_addr, rpc->dst_len, (char *)message.buf, sizeof(message.buf));
+        //struct packet_info result;
         // TODO: Recieving socket or DST socket for recieve packet?
         result = receive_packet_timeout(rpc->recv_socket, TIMEOUT_TIME);
         // How to access response message?
@@ -73,7 +73,8 @@ void RPC_idle(struct rpc_connection *rpc, int time) {
         
         else if (message.type == 0) {
             printf("ACK: %d\n", message.type);
-            idle(1);
+            //idle(1);
+            sleep(1);
             i = 0;
         }
         else if (message.client_id != rpc->client_id) {
