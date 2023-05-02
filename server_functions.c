@@ -1,4 +1,5 @@
 #include<unistd.h>
+#include<stdio.h>
 
 #include "server_functions.h"
 
@@ -10,6 +11,7 @@ void idle(int time){
 
 int get(int key){
     if(key > NUMKEYS || key < 0){
+        printf("key out of range\n");
         return -1;
     }
     return datastore[key];

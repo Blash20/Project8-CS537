@@ -73,14 +73,14 @@ int remove_call_table_entry(int client_id){
 
 struct request_message deserialize_message(char* buf){
     struct request_message m;
-    m.seq_number = buf[0];
-    m.client_id = buf[1];
-    m.type = buf[2];
+    
+    m.client_id = *(int *)buf;
+    m.seq_number = *(int *)(buf + 4);
+    m.type = *(int *)(buf + 8);
 
-    int* buffer = (int *)buf;
-    buffer = buffer + 3;
-    m.buf[0] = buffer[0];
-    m.buf[1] = buffer[1];
+    m.buf[0] = *(int *)(buf);
+    m.buf[1] = *(int *)(buf + 4);
+    //m.buf[1] = buffer[1];
 
     return m;
 }
@@ -169,6 +169,8 @@ int main(int argc, char *argv[]){
         if(request_packet.recv_len == -1){
             continue;
         }
+
+
 
         struct request_message m = deserialize_message(request_packet.buf);
 

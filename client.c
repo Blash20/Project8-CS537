@@ -36,6 +36,7 @@ struct rpc_connection RPC_init(int src_port, int dst_port, char dst_addr[]) {
     // Sets microseconds as seed
     srand(tv.tv_usec);
     rpc.client_id = rand();
+    printf("Client ID: %d\n", rpc.client_id);
 
     return rpc;
 }
@@ -52,6 +53,7 @@ void RPC_idle(struct rpc_connection *rpc, int time) {
 
     // Where to store time? In buf?
 
+
     struct request_message message;
 
     // Create IDLE message
@@ -64,7 +66,8 @@ void RPC_idle(struct rpc_connection *rpc, int time) {
     int valid = -1;
     
     for (int i = 0; i < RETRY_COUNT; i++) {
-        send_packet(rpc->recv_socket, rpc->dst_addr, rpc->dst_len, (char *)message.buf, sizeof(message.buf));
+        //TODO: replace message with packet
+        send_packet(rpc->recv_socket, rpc->dst_addr, rpc->dst_len, (char *)&message, sizeof(message));
         //struct packet_info result;
         // TODO: Recieving socket or DST socket for recieve packet?
         result = receive_packet_timeout(rpc->recv_socket, TIMEOUT_TIME);
