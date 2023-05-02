@@ -176,26 +176,25 @@ int main(int argc, char *argv[]){
             continue;
         }
 
-
-
         struct request_message m = deserialize_message(request_packet.buf);
 
         int call_table_index = get_call_table_index(m.client_id);
-        if(call_table_index == -1){
-            add_call_table_entry(m.client_id, m.seq_number, 0);
-            call_table_index = get_call_table_index(m.client_id);
-        }
 
-        struct call_table_entry entry = call_table[call_table_index];
+        // when this is the cliet's first call, we need to skip the check for duplicat sequence number or low sequence number
+
+        struct call_table_entry entry;
+        if(call_table_index != -1){
+            entry = call_table[call_table_index];
+        } 
 
         printf("received message from client %d with seq number %d\n", m.client_id, m.seq_number);
 
-        if(m.seq_number < entry.seq_number){
+        if(call_table_index != -1 && m.seq_number < entry.seq_number){
             // discard message
             printf("discarded message from client %d with seq number %d\n", m.client_id, m.seq_number);
             continue;
         }
-        else if(m.seq_number == entry.seq_number) {
+        else if(call_table_index != -1 && m.seq_number == entry.seq_number) {
             // send ack or last result
             if (entry.in_progress == 1) {
 
@@ -249,6 +248,10 @@ int main(int argc, char *argv[]){
             p->recv_len = request_packet.recv_len;
             memcpy(p->buf, request_packet.buf, request_packet.recv_len);
             printf("starting thread to handle function call\n");
+
+            if(call_table_index == -1){
+                add_call_table_entry(m.client_id, m.seq_number, 0);
+            }
             pthread_create(&thread, NULL, handle_function_call, (void*)p);
         }
 
