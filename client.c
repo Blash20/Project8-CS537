@@ -9,6 +9,7 @@
 #include <sys/time.h>
 #include "server_functions.h"
 
+// int sqn = 0;
 
 // initializes the RPC connection to the server
 struct rpc_connection RPC_init(int src_port, int dst_port, char dst_addr[]) {
@@ -44,17 +45,12 @@ struct rpc_connection RPC_init(int src_port, int dst_port, char dst_addr[]) {
 
 // Sleeps the server thread for a few seconds
 void RPC_idle(struct rpc_connection *rpc, int time) {
-    // 1. Sending
-    // 2. Receiving
-    // 3. Blocking until timeout 
-    // 4. Check for ACK
-    // 5. Reattempt if no response
-    // 6. Exit when retry over 5 times
-
-    // Where to store time? In buf?
+    printf("IDLE:\n");
 
 
     struct request_message message;
+
+    rpc->seq_number++;
 
     // Create IDLE message
     message.client_id = rpc->client_id;
@@ -63,28 +59,34 @@ void RPC_idle(struct rpc_connection *rpc, int time) {
     message.buf[0] = time;
 
     struct packet_info result;
+    struct response_message rm;
     int valid = -1;
-    
+
     for (int i = 0; i < RETRY_COUNT; i++) {
         //TODO: replace message with packet
         send_packet(rpc->recv_socket, rpc->dst_addr, rpc->dst_len, (char *)&message, sizeof(message));
         //struct packet_info result;
         // TODO: Recieving socket or DST socket for recieve packet?
         result = receive_packet_timeout(rpc->recv_socket, TIMEOUT_TIME);
-        // How to access response message?
+        
+        rm = *(struct response_message *) result.buf;
+        
+        // printf("RM Client ID: %d\n", rm.client_id);
+
+
         if (result.slen < 0) { printf("Timeout: Retrying\n"); }
         
-        else if (message.type == 0) {
-            printf("ACK: %d\n", message.type);
+        else if (rm.type == 0) {
+            printf("ACK: %d\n", rm.type);
             //idle(1);
             sleep(1);
             i = 0;
         }
-        else if (message.client_id != rpc->client_id) {
+        else if (rm.client_id != rpc->client_id) {
             printf("Client_IDs do not match\n");
             continue;
         }
-        else if(message.seq_number < rpc->seq_number) {
+        else if(rm.seq_number < rpc->seq_number) {
             printf("Old Sequence Number\n");
             continue;
         }
@@ -96,7 +98,7 @@ void RPC_idle(struct rpc_connection *rpc, int time) {
 
     }
 
-    if (!valid) {
+    if (valid != 0) {
         printf("No Response\n");
         exit(1);
     }
@@ -109,13 +111,133 @@ void RPC_idle(struct rpc_connection *rpc, int time) {
 // Gets the value of a key on the server store
 // Blocks until get RPC is completed on server
 int RPC_get(struct rpc_connection *rpc, int key) {
+    printf("GET:\n");
+    struct request_message message;
+
+    rpc->seq_number++;
+
+    // Create IDLE message
+    message.client_id = rpc->client_id;
+    message.seq_number = rpc->seq_number;
+    message.type = 2;    // 2 for GET
+    message.buf[0] = key;
+
+    struct packet_info result;
+    struct response_message rm;
+    int valid = -1;
+    
+    for (int i = 0; i < RETRY_COUNT; i++) {
+        //TODO: replace message with packet
+        send_packet(rpc->recv_socket, rpc->dst_addr, rpc->dst_len, (char *)&message, sizeof(message));
+        //struct packet_info result;
+        // TODO: Recieving socket or DST socket for recieve packet?
+        result = receive_packet_timeout(rpc->recv_socket, TIMEOUT_TIME);
+        
+        rm = *(struct response_message *) result.buf;
+        // printf("RM Client ID: %d\n", rm.client_id);
+
+
+        if (result.slen < 0) { printf("Timeout: Retrying\n"); }
+        
+        else if (rm.type == 0) {
+            printf("ACK: %d\n", rm.type);
+            //idle(1);
+            sleep(1);
+            i = 0;
+        }
+        else if (rm.client_id != rpc->client_id) {
+            printf("Client_IDs do not match\n");
+            continue;
+        }
+        else if(rm.seq_number < rpc->seq_number) {
+            printf("Old Sequence Number\n");
+            continue;
+        }
+        else {
+            printf("Valid Result\n");
+            valid = 0;
+            break;
+        }
+
+    }
+
+    if (valid != 0) {
+        printf("No Response\n");
+        exit(1);
+    }
+    else { 
+        printf("Result: %d\n", rm.result);
+        return rm.result; 
+    }
+
 
     return -1;
+    
 }
 
 // Sets the value of a key on the server store
 // Blocks until put RPC is completed on server
 int RPC_put(struct rpc_connection *rpc, int key, int value) {
+    printf("PUT:\n");
+    struct request_message message;
+
+    rpc->seq_number++;
+
+    // Create IDLE message
+    message.client_id = rpc->client_id;
+    message.seq_number = rpc->seq_number;
+    message.type = 3;    // 3 for PUT
+    message.buf[0] = key;
+    message.buf[1] = value;
+
+    struct packet_info result;
+    struct response_message rm;
+    int valid = -1;
+    
+    for (int i = 0; i < RETRY_COUNT; i++) {
+        //TODO: replace message with packet
+        send_packet(rpc->recv_socket, rpc->dst_addr, rpc->dst_len, (char *)&message, sizeof(message));
+        //struct packet_info result;
+        // TODO: Recieving socket or DST socket for recieve packet?
+        result = receive_packet_timeout(rpc->recv_socket, TIMEOUT_TIME);
+        
+        rm = *(struct response_message *) result.buf;
+        // printf("RM Client ID: %d\n", rm.client_id);
+
+
+        if (result.slen < 0) { printf("Timeout: Retrying\n"); }
+        
+        else if (rm.type == 0) {
+            printf("ACK: %d\n", rm.type);
+            sleep(1);
+            i = 0;
+        }
+        else if (rm.client_id != rpc->client_id) {
+            printf("Client_IDs do not match\n");
+            continue;
+        }
+        else if(rm.seq_number < rpc->seq_number) {
+            printf("Old Sequence Number\n");
+            continue;
+        }
+        else {
+            printf("Valid Result\n");
+            valid = 0;
+            break;
+        }
+
+    }
+
+    if (valid != 0) {
+        printf("No Response\n");
+        exit(1);
+    }
+    else { 
+        printf("Result: %d\n", rm.result);
+        return rm.result; 
+    }
+
+
     return -1;
 }
 

@@ -124,6 +124,12 @@ void* handle_function_call(void *arg){
     response_packet.recv_len = sizeof(response);
     memcpy(response_packet.buf, &response, sizeof(response));
 
+    printf("Result: %d\n", response.result);
+    printf("Sqn Num: %d\n", response.seq_number);
+    printf("Type: %d\n", response.type);
+    printf("\n");
+
+
     send_packet(s, response_packet.sock, response_packet.slen, response_packet.buf, response_packet.recv_len);
     return NULL;
 }
