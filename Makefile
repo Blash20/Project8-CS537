@@ -15,7 +15,7 @@ app2a: app2a.o client.o udp.o
 app2b: app2b.o  client.o udp.o
 	$(CC) $(CFLAGS) -o $@ $^
 
-app3: appa.o client.o udp.o
+app3: app3.o client.o udp.o
 	$(CC) $(CFLAGS) -o $@ $^
 
 
